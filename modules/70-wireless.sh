@@ -15,8 +15,13 @@ apt_install \
     bettercap \
     bluez \
     bluez-tools \
-    rfkill \
-    macchanger
+    rfkill
+
+# macchanger needs its debconf question pre-answered or it hangs
+if ! dpkg -s macchanger &>/dev/null && [[ ${DRY_RUN} -eq 0 ]]; then
+    echo "macchanger macchanger/automatically_run boolean false" | debconf-set-selections 2>/dev/null
+    apt_install macchanger
+fi
 
 # kismet: requires its own apt repo — too fragile for auto-install (key servers hang)
 if ! command -v kismet &>/dev/null; then
