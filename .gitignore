@@ -1,0 +1,16 @@
+# Logs
+*.log
+install_log
+
+# OS junk
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Editor
+.vscode/
+.idea/
+
+# Local overrides
+config/env.local.sh
