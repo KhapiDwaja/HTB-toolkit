@@ -62,18 +62,22 @@ fi
 
 # --- Git-cloned tools -------------------------------------------------------
 git_clone "https://github.com/ropnop/kerbrute.git" "kerbrute"
-# Build kerbrute — needs explicit Go env path or it won't find go
+# Build kerbrute — use go build directly instead of Makefile (more reliable)
 if [[ -d "${HTB_TOOLS_DIR}/kerbrute" && ${DRY_RUN} -eq 0 ]]; then
-    GO_BIN="$(command -v go || echo /usr/bin/go)"
+    GO_BIN="$(command -v go 2>/dev/null || echo /usr/local/go/bin/go)"
     if [[ -x "${GO_BIN}" ]]; then
+        KERB_OUT="${HTB_TOOLS_DIR}/kerbrute/dist/kerbrute_linux_amd64"
+        mkdir -p "${HTB_TOOLS_DIR}/kerbrute/dist"
         _run_as_user "build kerbrute" \
-            "cd '${HTB_TOOLS_DIR}/kerbrute' && PATH=\$PATH:\$(dirname ${GO_BIN}):${REAL_HOME}/go/bin make all"
-        # Find any kerbrute binary produced (linux_amd64 or linux_arm64)
-        if [[ -f "${HTB_TOOLS_DIR}/kerbrute/dist/kerbrute_linux_amd64" ]]; then
-            link_into_bin "${HTB_TOOLS_DIR}/kerbrute/dist/kerbrute_linux_amd64" "kerbrute"
+            "cd '${HTB_TOOLS_DIR}/kerbrute' && \
+             export PATH=\"\$PATH:$(dirname "${GO_BIN}")\" && \
+             export GOPATH=\"${REAL_HOME}/go\" && \
+             ${GO_BIN} build -ldflags '-s -w' -trimpath -o '${KERB_OUT}' ."
+        if [[ -f "${KERB_OUT}" ]]; then
+            link_into_bin "${KERB_OUT}" "kerbrute"
         fi
     else
-        warn "Go not found — kerbrute not built. Run 00-base first or install golang-go."
+        warn "Go not found — kerbrute not built."
     fi
 fi
 

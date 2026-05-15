@@ -9,8 +9,6 @@ info "Common services attack toolkit"
 # apt_install tolerates per-package failure, so list them all.
 apt_install \
     ftp \
-    tnftp \
-    tftp \
     tftp-hpa \
     smbclient \
     smbmap \
@@ -19,7 +17,6 @@ apt_install \
     swaks \
     snmp \
     snmp-mibs-downloader \
-    snmpcheck \
     onesixtyone \
     redis-tools \
     mariadb-client \
@@ -33,6 +30,12 @@ apt_install \
     curl \
     wget
 
+# snmpcheck: not in Ubuntu/Pop!OS repos; install from git
+git_clone "https://gitlab.com/kalilinux/packages/snmpcheck.git" "snmpcheck"
+if [[ -f "${HTB_TOOLS_DIR}/snmpcheck/snmpcheck-1.9.rb" ]]; then
+    link_into_bin "${HTB_TOOLS_DIR}/snmpcheck/snmpcheck-1.9.rb" "snmpcheck"
+fi
+
 # --- MSSQL: impacket's mssqlclient.py covers it; mssql-cli is optional ------
 pipx_install "mssql-cli"
 # impacket already installed by 20-active-directory; pipx --force is idempotent
@@ -41,14 +44,19 @@ pipx_install "impacket"
 # --- Oracle: ODAT -----------------------------------------------------------
 git_clone "https://github.com/quentinhardy/odat.git" "odat"
 if [[ -d "${HTB_TOOLS_DIR}/odat" && ${DRY_RUN} -eq 0 ]]; then
-    # On Ubuntu 23.04+/Pop!OS 22.04+, system pip refuses without --break-system-packages.
-    # We don't want to pollute system Python anyway; use a venv just for odat.
+    # odat needs cx_Oracle / python-libnmap which need system libs
+    apt_install libaio1 libaio-dev python3-dev libffi-dev
+
+    # Clean stale venv from previous failed run, then build fresh
+    rm -rf "${HTB_TOOLS_DIR}/odat/.venv" 2>/dev/null
     _run_as_user "odat venv setup" \
         "cd '${HTB_TOOLS_DIR}/odat' && \
          python3 -m venv .venv && \
-         .venv/bin/pip install --upgrade pip && \
-         .venv/bin/pip install -r requirements.txt"
-    # Provide a wrapper that uses the venv's python
+         .venv/bin/pip install --upgrade pip setuptools wheel && \
+         .venv/bin/pip install -r requirements.txt || \
+         .venv/bin/pip install pycryptodome scapy python-libnmap"
+
+    # Wrapper script so `odat` works from anywhere
     cat > "${HTB_TOOLS_DIR}/odat/odat.sh" <<'EOF'
 #!/usr/bin/env bash
 SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &>/dev/null && pwd )"

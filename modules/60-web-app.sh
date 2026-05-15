@@ -11,10 +11,26 @@ apt_install \
     gobuster \
     dirb \
     whatweb \
-    wafw00f \
-    commix \
-    xsser \
-    zaproxy
+    wafw00f
+
+# commix: not in Ubuntu repos; install from GitHub
+git_clone "https://github.com/commixproject/commix.git" "commix"
+if [[ -f "${HTB_TOOLS_DIR}/commix/commix.py" ]]; then
+    link_into_bin "${HTB_TOOLS_DIR}/commix/commix.py" "commix"
+fi
+
+# xsser: not in Ubuntu repos; install from GitHub
+git_clone "https://github.com/epsylon/xsser.git" "xsser"
+if [[ -f "${HTB_TOOLS_DIR}/xsser/xsser" ]]; then
+    link_into_bin "${HTB_TOOLS_DIR}/xsser/xsser" "xsser"
+fi
+
+# ZAP proxy: snap is the official install method on Ubuntu/Pop!OS
+if command -v snap &>/dev/null; then
+    snap_install zaproxy --classic
+else
+    info "ZAP proxy: snap not available. Install from https://www.zaproxy.org/download/"
+fi
 
 # --- Burp Suite Community: not in standard Ubuntu repos -------------------
 # We don't auto-install Burp here (huge JAR + EULA). Point the user instead.
