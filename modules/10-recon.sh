@@ -26,8 +26,8 @@ apt_install \
 # enum4linux-ng replaces the old enum4linux (Perl script not packaged)
 pipx_install "git+https://github.com/cddmp/enum4linux-ng.git"
 pipx_install "fierce"
-# theHarvester: Python app, install from PyPI via pipx
-pipx_install "theHarvester"
+# theHarvester: Python app — PyPI name is lowercase
+pipx_install "theharvester"
 # amass: Go binary from ProjectDiscovery (not in Ubuntu repos since v4)
 go_install "github.com/owasp-amass/amass/v4/...@master"
 

@@ -18,17 +18,10 @@ apt_install \
     rfkill \
     macchanger
 
-# kismet: not in Ubuntu/Pop!OS default repos; use Kismet's own apt repo
-if ! command -v kismet &>/dev/null && [[ ${DRY_RUN} -eq 0 ]]; then
-    info "Adding Kismet repository"
-    _run "add kismet gpg key" bash -c \
-        "wget -qO- https://www.kismetwireless.net/repos/kismet-release.gpg.key | gpg --dearmor > /usr/share/keyrings/kismet-archive-keyring.gpg 2>/dev/null"
-    CODENAME=$(lsb_release -cs 2>/dev/null || echo jammy)
-    echo "deb [signed-by=/usr/share/keyrings/kismet-archive-keyring.gpg] https://www.kismetwireless.net/repos/apt/release/${CODENAME} ${CODENAME} main" \
-        > /etc/apt/sources.list.d/kismet.list 2>/dev/null
-    APT_UPDATED=0
-    apt_update_once
-    apt_install kismet
+# kismet: requires its own apt repo — too fragile for auto-install (key servers hang)
+if ! command -v kismet &>/dev/null; then
+    info "Kismet not auto-installed (needs its own repo, can hang)."
+    info "  Manual install: https://www.kismetwireless.net/docs/readme/packages/"
 fi
 
 # --- wifite: not in Ubuntu repos; install from GitHub -----------------------

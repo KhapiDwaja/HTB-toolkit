@@ -44,8 +44,9 @@ pipx_install "impacket"
 # --- Oracle: ODAT -----------------------------------------------------------
 git_clone "https://github.com/quentinhardy/odat.git" "odat"
 if [[ -d "${HTB_TOOLS_DIR}/odat" && ${DRY_RUN} -eq 0 ]]; then
-    # odat needs cx_Oracle / python-libnmap which need system libs
-    apt_install libaio1 libaio-dev python3-dev libffi-dev
+    # odat needs cx_Oracle which needs libaio. Pop!OS 24.04+ renamed to libaio1t64
+    apt_install libaio-dev
+    apt_install libaio1t64 || apt_install libaio1 || true
 
     # Clean stale venv from previous failed run, then build fresh
     rm -rf "${HTB_TOOLS_DIR}/odat/.venv" 2>/dev/null
