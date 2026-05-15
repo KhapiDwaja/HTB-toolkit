@@ -3,35 +3,43 @@
 
 info "Recon & scanning tools"
 
-# --- APT-available ----------------------------------------------------------
+# --- APT (apt_install falls back per-package if batch fails) ---------------
 apt_install \
-    nmap masscan \
-    dnsrecon dnsenum fierce \
-    whatweb wafw00f \
+    nmap \
+    masscan \
+    dnsrecon \
+    dnsenum \
+    whatweb \
+    wafw00f \
     netcat-openbsd \
     arp-scan \
     nbtscan \
     onesixtyone \
-    snmp snmp-mibs-downloader \
-    smbclient smbmap cifs-utils \
-    enum4linux \
+    snmp \
+    snmp-mibs-downloader \
+    smbclient \
+    cifs-utils \
     nikto \
-    amass theharvester
+    amass \
+    theharvester \
+    smbmap \
+    enum4linux
 
-# --- pipx -------------------------------------------------------------------
-pipx_install enum4linux-ng
-pipx_install dnsx           || true   # optional; install fails gracefully
-pipx_install fierce         || true
+# --- pipx (CLI apps) --------------------------------------------------------
+# enum4linux-ng: from GitHub (PyPI version is a library, we want the CLI)
+pipx_install "git+https://github.com/cddmp/enum4linux-ng.git"
+pipx_install "fierce"
 
-# --- go-installed (faster modern scanners) ----------------------------------
+# --- Go-installed modern scanners -------------------------------------------
 go_install "github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"
 go_install "github.com/projectdiscovery/httpx/cmd/httpx@latest"
 go_install "github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"
 go_install "github.com/projectdiscovery/naabu/v2/cmd/naabu@latest"
+go_install "github.com/projectdiscovery/dnsx/cmd/dnsx@latest"
 go_install "github.com/OJ/gobuster/v3@latest"
 
-# --- rustscan (cargo) -------------------------------------------------------
-if command -v cargo &>/dev/null || [[ -f "${REAL_HOME}/.cargo/bin/cargo" ]]; then
+# --- rustscan (via cargo, if available) -------------------------------------
+if [[ -f "${REAL_HOME}/.cargo/bin/cargo" ]] || command -v cargo &>/dev/null; then
     _run_as_user "install rustscan" \
         "source ${REAL_HOME}/.cargo/env 2>/dev/null; cargo install rustscan"
 fi

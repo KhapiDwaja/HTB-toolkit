@@ -68,6 +68,8 @@ apt_update_once() {
 
 apt_install() {
     # apt_install pkg1 pkg2 ...
+    # If the batch fails (usually because one package doesn't exist on this
+    # distro), retry individually so we install everything that IS available.
     apt_update_once
     local pkgs=("$@")
     local missing=()
@@ -79,9 +81,22 @@ apt_install() {
         fi
     done
     [[ ${#missing[@]} -eq 0 ]] && return 0
+
+    # First try a batch install (fast path).
     if _run "apt install ${missing[*]}" apt-get install -y --no-install-recommends "${missing[@]}"; then
         for p in "${missing[@]}"; do manifest_add apt "${p}"; done
+        return 0
     fi
+
+    # Batch failed — fall back to one-at-a-time so we install whatever's available.
+    warn "Batch install failed, retrying per-package..."
+    for p in "${missing[@]}"; do
+        if _run "  apt install ${p}" apt-get install -y --no-install-recommends "${p}"; then
+            manifest_add apt "${p}"
+        else
+            warn "  ${p} not available in apt (skipped)"
+        fi
+    done
 }
 
 # ---------- pipx -------------------------------------------------------------
@@ -107,15 +122,17 @@ pipx_install() {
 # ---------- git clone into $HTB_TOOLS_DIR -----------------------------------
 git_clone() {
     # git_clone <url> [destname]
+    # GIT_TERMINAL_PROMPT=0 ensures we fail fast on 404/private repos
+    # instead of hanging waiting for a username/password.
     local url="$1"
     local name="${2:-$(basename "${url%.git}")}"
     local dest="${HTB_TOOLS_DIR}/${name}"
     if [[ -d "${dest}/.git" ]]; then
         info "git: ${name} already present, pulling latest"
-        _run_as_user "git pull ${name}" "git -C '${dest}' pull --rebase --autostash"
+        _run_as_user "git pull ${name}" "GIT_TERMINAL_PROMPT=0 git -C '${dest}' pull --rebase --autostash"
     else
         if _run_as_user "git clone ${url} -> ${dest}" \
-            "git clone --depth=1 '${url}' '${dest}'"; then
+            "GIT_TERMINAL_PROMPT=0 git clone --depth=1 '${url}' '${dest}'"; then
             manifest_add git "${dest}" "${url}"
         fi
     fi

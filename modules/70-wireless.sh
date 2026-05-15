@@ -3,21 +3,37 @@
 
 info "Wireless attack toolkit"
 
+# --- APT --------------------------------------------------------------------
 apt_install \
     aircrack-ng \
     reaver \
     bully \
     pixiewps \
-    hcxdumptool hcxtools \
+    hcxdumptool \
+    hcxtools \
     kismet \
-    wifite \
     mdk4 \
     bettercap \
-    bluez bluez-tools \
+    bluez \
+    bluez-tools \
     rfkill \
     macchanger
 
-# Optional SDR — only install if user has hardware
+# --- wifite: not in Ubuntu repos; install from GitHub -----------------------
+git_clone "https://github.com/derv82/wifite2.git" "wifite2"
+if [[ -f "${HTB_TOOLS_DIR}/wifite2/Wifite.py" ]]; then
+    # provide a launcher
+    cat > "${HTB_TOOLS_DIR}/wifite2/wifite-launcher.sh" <<'EOF'
+#!/usr/bin/env bash
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &>/dev/null && pwd )"
+exec sudo python3 "${SCRIPT_DIR}/Wifite.py" "$@"
+EOF
+    chmod +x "${HTB_TOOLS_DIR}/wifite2/wifite-launcher.sh"
+    chown "${REAL_USER}:${REAL_USER}" "${HTB_TOOLS_DIR}/wifite2/wifite-launcher.sh"
+    link_into_bin "${HTB_TOOLS_DIR}/wifite2/wifite-launcher.sh" "wifite"
+fi
+
+# --- Optional SDR — only with INSTALL_SDR=1 ---------------------------------
 if [[ "${INSTALL_SDR:-0}" == "1" ]]; then
     apt_install rtl-sdr gqrx-sdr gnuradio
 else
