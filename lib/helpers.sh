@@ -60,6 +60,11 @@ _run_as_user() {
 
 # ---------- APT --------------------------------------------------------------
 APT_UPDATED=0
+
+# Suppress ALL debconf dialogs (macchanger, krb5-user, wireshark, etc.)
+# These hang the installer when stdout is redirected to a log file.
+export DEBIAN_FRONTEND=noninteractive
+
 apt_update_once() {
     [[ ${APT_UPDATED} -eq 1 ]] && return 0
     _run "apt update" apt-get update -y
@@ -83,7 +88,7 @@ apt_install() {
     [[ ${#missing[@]} -eq 0 ]] && return 0
 
     # First try a batch install (fast path).
-    if _run "apt install ${missing[*]}" apt-get install -y --no-install-recommends "${missing[@]}"; then
+    if _run "apt install ${missing[*]}" DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${missing[@]}"; then
         for p in "${missing[@]}"; do manifest_add apt "${p}"; done
         return 0
     fi
@@ -91,7 +96,7 @@ apt_install() {
     # Batch failed — fall back to one-at-a-time so we install whatever's available.
     warn "Batch install failed, retrying per-package..."
     for p in "${missing[@]}"; do
-        if _run "  apt install ${p}" apt-get install -y --no-install-recommends "${p}"; then
+        if _run "  apt install ${p}" DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "${p}"; then
             manifest_add apt "${p}"
         else
             warn "  ${p} not available in apt (skipped)"
